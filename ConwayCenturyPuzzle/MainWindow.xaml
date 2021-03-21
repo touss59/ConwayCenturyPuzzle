@@ -1,0 +1,77 @@
+﻿<Window x:Class="ConwayCenturyPuzzle.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ConwayCenturyPuzzle"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="750" Width="650"
+        Closing="Window_Closing" 
+        KeyDown="ExecuteSolution">
+
+    <Canvas x:Name="canvasMain"
+            ClipToBounds="True" Width="600" Height="700"
+            PreviewMouseUp="CanvasMainMouseUp"
+            PreviewMouseMove="CanvasMainMouseMove">
+        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="V" Fill="LightBlue" Canvas.Left="100" Canvas.Top="200" Width="100" Height="200" />
+        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="X" Fill="LightBlue" Canvas.Left="200" Canvas.Top="300" Width="100" Height="200"/>
+        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="W" Fill="LightBlue" Canvas.Left="400" Canvas.Top="200" Width="100" Height="200" />
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="R" Fill="red" Canvas.Left="100" Canvas.Top="100" Width="100" Height="100" />
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="r" Fill="red" Canvas.Left="400" Canvas.Top="100" Width="100" Height="100" />
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="k" Fill="red" Canvas.Left="100" Canvas.Top="400" Width="100" Height="100" />
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="K" Fill="red" Canvas.Left="400" Canvas.Top="400" Width="100" Height="100" />
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="M" Fill="Green" Canvas.Left="300" Canvas.Top="500" Width="200" Height="100" />
+        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="Y" Fill="Green" Canvas.Left="100" Canvas.Top="500" Width="200" Height="100"/>
+        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="J" Fill="Yellow" Canvas.Left="200" Canvas.Top="100" Width="200" Height="200" />
+
+        <Rectangle
+             Canvas.Left="100"
+             Canvas.Top="100"
+             Width="400"
+             Height="4"
+             Stroke="Black"
+             StrokeThickness="4"/>
+
+        <Rectangle
+            Canvas.Left="100"
+            Canvas.Top="600"
+            Width="100"
+            Height="4"
+            Stroke="Black"
+            StrokeThickness="4"/>
+
+        <Rectangle
+            x:Name="Exit"
+            Canvas.Left="200"
+            Canvas.Top="600"
+            Height="4"
+            Width="200"
+            Stroke="Gray"
+            StrokeThickness="4"/>
+
+        <Rectangle
+            Canvas.Left="400"
+            Canvas.Top="600"
+            Width="100"
+            Height="4"
+            Stroke="Black"
+            StrokeThickness="4"/>
+
+        <Rectangle
+            Canvas.Left="100"
+            Canvas.Top="100"
+            Height="500"
+            Width="4"
+            Stroke="Black"
+            StrokeThickness="4"/>
+
+        <Rectangle
+            Canvas.Left="500"
+            Canvas.Top="100"
+            Height="500"
+            Width="4"
+            Stroke="Black"
+            StrokeThickness="4"/>
+
+    </Canvas>
+</Window>
