@@ -1,37 +1,54 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
+using MoreLinq;
+using System.Diagnostics;
 
 namespace ConwayCenturyPuzzle
 {
     public class Solver
     {
+        private static readonly char[,] valueStartingNode = new char[1, 1] { { 'S' } };
+        private static readonly char[,] keyWinningNode = new char[1, 1] { { 'W' } };
+        private static int gridLenghtY = 0;
+        private static int gridLenghtX = 0;
+        private static readonly Dictionary<char, string> shapesType = new Dictionary<char, string>();
+        private static readonly StringBuilder str = new StringBuilder();
+
         public static List<char[,]> Solve(char[,] grid)
         {
-            var firstPosition = StockGrid(grid);
-            (string historique, string positionNow) positionNow = (firstPosition, firstPosition);
 
-            Queue<(string historique, string positionNow)> nodesToExplore = new Queue<(string historique, string positionNow)> { };
-            Dictionary<string, string> nodesExplored = new Dictionary<string, string> { };
-            HashSet<string> positionVisited = new HashSet<string> { };
-            nodesToExplore.Enqueue(positionNow);
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            Queue<char[,]> nodesToExplore = new Queue<char[,]>();
+            Dictionary<char[,], char[,]> nodesExplored = new Dictionary<char[,], char[,]>();
+            HashSet<string> positionVisited = new HashSet<string>();
             bool isSolve = false;
 
-            nodesExplored.Add(firstPosition, "start");
-            positionVisited.Add(SavePosition(firstPosition));
+            gridLenghtY = grid.GetLength(0);
+            gridLenghtX = grid.GetLength(1);
+
+            AssignTypeToEachShape(grid);
+
+            nodesToExplore.Enqueue(grid);
+            nodesExplored.Add(grid, valueStartingNode);
+            positionVisited.Add(SavePosition(grid));
+
+            HashSet<char> pieceVisited = new HashSet<char>();
+            List<char[,]> newPositions = new List<char[,]> { };
 
             while (nodesToExplore.Count > 0 && !isSolve)
             {
-                positionNow = nodesToExplore.Dequeue();
+                pieceVisited.Clear();
+                newPositions.Clear();
 
-                grid = GetGrid(positionNow.positionNow);
+                grid = nodesToExplore.Dequeue();
 
-                List<char> pieceVisited = new List<char> { };
-                List<string> newPositions = new List<string> { };
-
-                for (var y = 0; y < grid.GetLength(0); y++)
+                for (var y = 0; y < gridLenghtY; y++)
                 {
-                    for (var x = 0; x < grid.GetLength(1); x++)
+                    for (var x = 0; x < gridLenghtX; x++)
                     {
                         if (!pieceVisited.Contains(grid[y, x]) && grid[y, x] != 'A')
                         {
@@ -60,16 +77,16 @@ namespace ConwayCenturyPuzzle
                 }
                 foreach (var newPos in newPositions)
                 {
-                    if (!positionVisited.Contains(SavePosition(newPos)) && !positionVisited.Contains(GetSymmetry(SavePosition(newPos))))
+                    var newPosSave = SavePosition(newPos);
+                    if (!positionVisited.Contains(newPosSave))
                     {
-                        (string historique, string positionNow) position = (positionNow.positionNow, newPos);
-                        nodesExplored.Add(newPos, positionNow.positionNow);
-                        positionVisited.Add(SavePosition(newPos));
-                        nodesToExplore.Enqueue(position);
+                        nodesToExplore.Enqueue(newPos);
+                        nodesExplored.Add(newPos, grid);
+                        positionVisited.Add(newPosSave);
 
-                        if (newPos[13] == 'J' && newPos[14] == 'J' && newPos[17] == 'J' && newPos[18] == 'J')
+                        if (IsWinPosition(newPos))
                         {
-                            nodesExplored.Add("win", newPos);
+                            nodesExplored.Add(keyWinningNode, newPos);
                             isSolve = true;
                             break;
                         }
@@ -79,42 +96,31 @@ namespace ConwayCenturyPuzzle
                 }
             }
 
-            string key = "win";
-
+            char[,] key = keyWinningNode;
             List<char[,]> response = new List<char[,]> { };
 
             while (1 == 1)
             {
                 key = nodesExplored[key];
 
-                char[,] step = new char[5, 4];
-
-                if (key == "start")
+                if (key == valueStartingNode)
                 {
                     break;
                 }
 
-                var index = 0;
-                for (var y = 0; y < grid.GetLength(0); y++)
-                {
-                    for (var x = 0; x < grid.GetLength(1); x++)
-                    {
-                        step[y, x] = key[index];
-                        index++;
-                    }
-                }
-
-                response.Add(step);
+                response.Add(key);
             }
+            stopWatch.Stop();
+            var t = stopWatch.ElapsedMilliseconds;
             return response;
         }
 
         public static (int xMin, int xMax, int yMin, int yMax) GetDimPiece(char piece, char[,] grid)
         {
             (int xMin, int xMax, int yMin, int yMax) = (999, 0, 999, 0);
-            for (var y = 0; y < grid.GetLength(0); y++)
+            for (var y = 0; y < gridLenghtY; y++)
             {
-                for (var x = 0; x < grid.GetLength(1); x++)
+                for (var x = 0; x < gridLenghtX; x++)
                 {
                     if (grid[y, x] == piece)
                     {
@@ -150,7 +156,7 @@ namespace ConwayCenturyPuzzle
             }
 
             //check move right
-            if (dimension.xMax + 1 < grid.GetLength(1))
+            if (dimension.xMax + 1 < gridLenghtX)
             {
                 for (var y = dimension.yMin; y <= dimension.yMax; y++)
                 {
@@ -182,7 +188,7 @@ namespace ConwayCenturyPuzzle
             }
 
             //check move down
-            if (dimension.yMax + 1 < grid.GetLength(0))
+            if (dimension.yMax + 1 < gridLenghtY)
             {
                 for (var x = dimension.xMin; x <= dimension.xMax; x++)
                 {
@@ -200,59 +206,51 @@ namespace ConwayCenturyPuzzle
             return (left, right, up, down);
         }
 
-        public static string Move((int xMin, int xMax, int yMin, int yMax) dimension, char[,] grid, char direction)
+        public static char[,] Move((int xMin, int xMax, int yMin, int yMax) dimension, char[,] grid, char direction)
         {
             char[,] gridMoved = CopieGrid(grid);
-            if (direction == 'U')
-            {
-                for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                {
-                    gridMoved[dimension.yMin - 1, x] = grid[dimension.yMin, x];
-                    gridMoved[dimension.yMax, x] = 'A';
-                }
-                return StockGrid(gridMoved);
-            }
 
-            if (direction == 'D')
+            switch (direction)
             {
-                for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                {
-                    gridMoved[dimension.yMin, x] = 'A';
-                    gridMoved[dimension.yMax + 1, x] = grid[dimension.yMax, x];
-                }
-                return StockGrid(gridMoved);
+                case 'U':
+                    for (var x = dimension.xMin; x <= dimension.xMax; x++)
+                    {
+                        gridMoved[dimension.yMin - 1, x] = grid[dimension.yMin, x];
+                        gridMoved[dimension.yMax, x] = 'A';
+                    }
+                    break;
+                case 'D':
+                    for (var x = dimension.xMin; x <= dimension.xMax; x++)
+                    {
+                        gridMoved[dimension.yMax + 1, x] = grid[dimension.yMax, x];
+                        gridMoved[dimension.yMin, x] = 'A';
+                    }
+                    break;
+                case 'L':
+                    for (var y = dimension.yMin; y <= dimension.yMax; y++)
+                    {
+                        gridMoved[y, dimension.xMin - 1] = grid[y, dimension.xMin];
+                        gridMoved[y, dimension.xMax] = 'A';
+                    }
+                    break;
+                default:
+                    for (var y = dimension.yMin; y <= dimension.yMax; y++)
+                    {
+                        gridMoved[y, dimension.xMax + 1] = grid[y, dimension.xMax];
+                        gridMoved[y, dimension.xMin] = 'A';
+                    }
+                    break;
             }
-
-            if (direction == 'L')
-            {
-                for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                {
-                    gridMoved[y, dimension.xMin - 1] = grid[y, dimension.xMin];
-                    gridMoved[y, dimension.xMax] = 'A';
-                }
-                return StockGrid(gridMoved);
-            }
-
-            if (direction == 'R')
-            {
-                for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                {
-                    gridMoved[y, dimension.xMax + 1] = grid[y, dimension.xMax];
-                    gridMoved[y, dimension.xMin] = 'A';
-                }
-                return StockGrid(gridMoved);
-            }
-
-            return StockGrid(gridMoved);
+            return gridMoved;
         }
 
         public static char[,] CopieGrid(char[,] grid)
         {
-            char[,] newGrid = new char[grid.GetLength(0), grid.GetLength(1)];
+            char[,] newGrid = new char[gridLenghtY, gridLenghtX];
 
-            for (var y = 0; y < grid.GetLength(0); y++)
+            for (var y = 0; y < gridLenghtY; y++)
             {
-                for (var x = 0; x < grid.GetLength(1); x++)
+                for (var x = 0; x < gridLenghtX; x++)
                 {
                     newGrid[y, x] = grid[y, x];
                 }
@@ -260,85 +258,50 @@ namespace ConwayCenturyPuzzle
             return newGrid;
         }
 
-        public static string StockGrid(char[,] grid)
+
+        public static char[,] GetSymmetry(char[,] pos)
         {
-            string result = "";
-
-            foreach (var piece in grid)
+            for (var y = 0; y < gridLenghtY; y++)
             {
-                result += piece;
-            }
-            return result;
-        }
-
-        public static char[,] GetGrid(string gridStocked)
-        {
-            char[,] grid = new char[5, 4];
-            int i = 0;
-
-            for (var y = 0; y < grid.GetLength(0); y++)
-            {
-                for (var x = 0; x < grid.GetLength(1); x++)
+                for (var x = 0; x < gridLenghtX; x++)
                 {
-                    grid[y, x] = gridStocked[i];
-                    i++;
+                    int start = 0;
+                    int end = gridLenghtX - 1;
+                    while (start < end)
+                    {
+                        var temp = pos[y, start];
+                        pos[y, start] = pos[y, end];
+                        pos[y, end] = temp;
+
+                        start++;
+                        end--;
+                    }
+
                 }
             }
-            return grid;
+
+            return pos;
         }
 
-        public static string GetSymmetry(string pos)
+        public static string SavePosition(char[,] pos)
         {
-            char[,] symmetry = GetGrid(pos);
-
-            for (var y = 0; y < symmetry.GetLength(0); y++)
+            str.Clear();
+            for (var y = 0; y < gridLenghtY; y++)
             {
-                List<char> pieces = new List<char> { };
-                for (var x = 0; x < symmetry.GetLength(1); x++)
+                for (var x = 0; x < gridLenghtX; x++)
                 {
-                    pieces.Add(symmetry[y, x]);
+                    str.Append(shapesType[pos[y, x]]);
                 }
-
-                symmetry[y, 0] = pieces[3];
-                symmetry[y, 1] = pieces[2];
-                symmetry[y, 2] = pieces[0];
-                symmetry[y, 3] = pieces[1];
             }
 
-            return StockGrid(symmetry);
+            return str.ToString();
         }
 
-        public static string SavePosition(string pos)
-        {
-            string savePos = "";
-            for (var i = 0; i < pos.Length; i++)
-            {
-                if (pos[i] == 'X' || pos[i] == 'W')
-                {
-                    savePos += "V";
-                }
-                else if (pos[i] == 'r' || pos[i] == 'K' || pos[i] == 'k')
-                {
-                    savePos += 'R';
-                }
-                else if (pos[i] == 'Y')
-                {
-                    savePos += "M";
-                }
-                else
-                {
-                    savePos += pos[i];
-                }
-            }
-            return savePos;
-        }
-
-
-        public static List<(char shapeToMove, char direction)> ShowMove(char[,] grid)
+        public static List<(char shapeToMove, char direction)> ShowMoves(char[,] grid)
         {
             List<char[,]> response = Solve(grid);
             response.Reverse();
-            List<(char,char)> moves = new List<(char,char)> { };
+            List<(char, char)> moves = new List<(char, char)> { };
 
 
             for (var i = 1; i < response.Count; i++)
@@ -351,7 +314,7 @@ namespace ConwayCenturyPuzzle
 
         public static (char shapeMove, char direction) GetMove(char[,] previous, char[,] now)
         {
-            char shapeMove = GetShape(previous, now);
+            char shapeMove = GetShapeMoved(previous, now);
 
             (int xMin, int xMax, int yMin, int yMax) dimP = GetDimPiece(shapeMove, previous);
             (int xMin, int xMax, int yMin, int yMax) dimN = GetDimPiece(shapeMove, now);
@@ -362,11 +325,11 @@ namespace ConwayCenturyPuzzle
 
         }
 
-        public static char GetShape(char[,] previous, char[,] now)
+        public static char GetShapeMoved(char[,] previous, char[,] now)
         {
-            for (var y = 0; y < previous.GetLength(0); y++)
+            for (var y = 0; y < gridLenghtY; y++)
             {
-                for (var x = 0; x < previous.GetLength(1); x++)
+                for (var x = 0; x < gridLenghtX; x++)
                 {
                     if (previous[y, x] != now[y, x] && now[y, x] != 'A')
                     {
@@ -383,12 +346,11 @@ namespace ConwayCenturyPuzzle
             {
                 return 'L';
             }
-            if (dimN.xMin > dimP.xMin)
+            else if (dimN.xMin > dimP.xMin)
             {
                 return 'R';
             }
-
-            if (dimN.yMin < dimP.yMin)
+            else if (dimN.yMin < dimP.yMin)
             {
                 return 'U';
             }
@@ -396,6 +358,29 @@ namespace ConwayCenturyPuzzle
             {
                 return 'D';
             }
+        }
+
+        private static void AssignTypeToEachShape(char[,] grid)
+        {
+            foreach (var c in grid)
+            {
+                if (!shapesType.ContainsKey(c))
+                {
+                    if (c == 'A')
+                    {
+                        shapesType.Add(c, "A");
+                        continue;
+                    }
+                    var (xMin, xMax, yMin, yMax) = GetDimPiece(c, grid);
+                    var type = $"D{xMax - xMin}{yMax - yMin}F";
+                    shapesType.Add(c, type);
+                }
+            }
+        }
+
+        private static bool IsWinPosition(char[,] newPos)
+        {
+            return newPos[3,1] == 'J' && newPos[3, 2] == 'J' && newPos[4, 1] == 'J' && newPos[4, 2] == 'J';
         }
     }
 }

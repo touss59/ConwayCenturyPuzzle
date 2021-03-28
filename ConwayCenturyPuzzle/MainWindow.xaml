@@ -9,20 +9,28 @@
         Closing="Window_Closing" 
         KeyDown="ExecuteSolution">
 
+    <Window.Resources>
+        <Style x:Key="DraggableElement" TargetType="Rectangle">
+            <Setter Property="Stroke" Value="White"/>
+            <Setter Property="StrokeThickness" Value="4"/>
+            <EventSetter Event="PreviewMouseDown" Handler="UserControlPreviewMouseDown"/>
+        </Style>
+    </Window.Resources>
+
     <Canvas x:Name="canvasMain"
             ClipToBounds="True" Width="600" Height="700"
             PreviewMouseUp="CanvasMainMouseUp"
             PreviewMouseMove="CanvasMainMouseMove">
-        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="V" Fill="LightBlue" Canvas.Left="100" Canvas.Top="200" Width="100" Height="200" />
-        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="X" Fill="LightBlue" Canvas.Left="200" Canvas.Top="300" Width="100" Height="200"/>
-        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="W" Fill="LightBlue" Canvas.Left="400" Canvas.Top="200" Width="100" Height="200" />
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="R" Fill="red" Canvas.Left="100" Canvas.Top="100" Width="100" Height="100" />
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="r" Fill="red" Canvas.Left="400" Canvas.Top="100" Width="100" Height="100" />
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="k" Fill="red" Canvas.Left="100" Canvas.Top="400" Width="100" Height="100" />
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="K" Fill="red" Canvas.Left="400" Canvas.Top="400" Width="100" Height="100" />
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="M" Fill="Green" Canvas.Left="300" Canvas.Top="500" Width="200" Height="100" />
-        <Rectangle PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="Y" Fill="Green" Canvas.Left="100" Canvas.Top="500" Width="200" Height="100"/>
-        <Rectangle  PreviewMouseDown="UserControlPreviewMouseDown" Stroke="White" StrokeThickness="4" x:Name="J" Fill="Yellow" Canvas.Left="200" Canvas.Top="100" Width="200" Height="200" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="V" Fill="LightBlue" Canvas.Left="100" Canvas.Top="200" Width="100" Height="200" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="X" Fill="LightBlue" Canvas.Left="200" Canvas.Top="300" Width="100" Height="200"/>
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="W" Fill="LightBlue" Canvas.Left="400" Canvas.Top="200" Width="100" Height="200" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="R" Fill="red" Canvas.Left="100" Canvas.Top="100" Width="100" Height="100" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="r" Fill="red" Canvas.Left="400" Canvas.Top="100" Width="100" Height="100" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="k" Fill="red" Canvas.Left="100" Canvas.Top="400" Width="100" Height="100" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="K" Fill="red" Canvas.Left="400" Canvas.Top="400" Width="100" Height="100" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="M" Fill="Green" Canvas.Left="300" Canvas.Top="500" Width="200" Height="100" />
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="Y" Fill="Green" Canvas.Left="100" Canvas.Top="500" Width="200" Height="100"/>
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="J" Fill="Yellow" Canvas.Left="200" Canvas.Top="100" Width="200" Height="200" />
 
         <Rectangle
              Canvas.Left="100"
