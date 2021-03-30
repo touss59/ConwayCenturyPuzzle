@@ -53,7 +53,7 @@ namespace ConwayCenturyPuzzle
 
             dispatcherTimer = new DispatcherTimer
             {
-                Interval = new TimeSpan(0, 0, 0, 0, 100)
+                Interval = new TimeSpan(0, 0, 0, 0, 50)
             };
 
             dispatcherTimer.Tick += new EventHandler(ShowSolution);
@@ -64,8 +64,10 @@ namespace ConwayCenturyPuzzle
         {
             if (index < moves.Count)
             {
+
                 var (shapeToMove, direction) = moves[index];
-                Rectangle shape = rectangles.Where(r => r.Name == shapeToMove.ToString()).FirstOrDefault();
+
+                    Rectangle shape = rectangles.Where(r => r.Name == shapeToMove.ToString()).FirstOrDefault();
 
                 switch (direction)
                 {
@@ -240,6 +242,13 @@ namespace ConwayCenturyPuzzle
 
         private void ResetPositions()
         {
+            var a = this.canvasMain.Children;
+
+            foreach(var e in a)
+            {
+                var t = e.GetType();
+            }
+
             Canvas.SetLeft(V, 100);
             Canvas.SetTop(V, 200);
 

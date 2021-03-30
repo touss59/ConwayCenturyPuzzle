@@ -13,9 +13,9 @@ namespace ConwayCenturyPuzzle
         private static readonly char[,] keyWinningNode = new char[1, 1] { { 'W' } };
         private static int gridLenghtY = 0;
         private static int gridLenghtX = 0;
-        private static readonly Dictionary<char, string> shapesType = new Dictionary<char, string>();
+        private static Dictionary<char, char> shapesType = new Dictionary<char, char>();
         private static readonly StringBuilder str = new StringBuilder();
-
+        private static readonly StringBuilder str2 = new StringBuilder();
         public static List<char[,]> Solve(char[,] grid)
         {
 
@@ -30,11 +30,14 @@ namespace ConwayCenturyPuzzle
             gridLenghtY = grid.GetLength(0);
             gridLenghtX = grid.GetLength(1);
 
-            AssignTypeToEachShape(grid);
+            if (shapesType.Count == 0)
+                AssignTypeToEachShape(grid);
 
             nodesToExplore.Enqueue(grid);
             nodesExplored.Add(grid, valueStartingNode);
-            positionVisited.Add(SavePosition(grid));
+            var posSave = SavePosition(grid);
+            positionVisited.Add(posSave.Item1);
+            positionVisited.Add(posSave.Item2);
 
             HashSet<char> pieceVisited = new HashSet<char>();
             List<char[,]> newPositions = new List<char[,]> { };
@@ -77,12 +80,13 @@ namespace ConwayCenturyPuzzle
                 }
                 foreach (var newPos in newPositions)
                 {
-                    var newPosSave = SavePosition(newPos);
-                    if (!positionVisited.Contains(newPosSave))
+                    posSave = SavePosition(newPos);
+                    if (!positionVisited.Contains(posSave.Item1) && !positionVisited.Contains(posSave.Item2))
                     {
                         nodesToExplore.Enqueue(newPos);
                         nodesExplored.Add(newPos, grid);
-                        positionVisited.Add(newPosSave);
+                        positionVisited.Add(posSave.Item1);
+                        positionVisited.Add(posSave.Item2);
 
                         if (IsWinPosition(newPos))
                         {
@@ -96,19 +100,13 @@ namespace ConwayCenturyPuzzle
                 }
             }
 
-            char[,] key = keyWinningNode;
+            grid = nodesExplored[keyWinningNode];
             List<char[,]> response = new List<char[,]> { };
 
-            while (1 == 1)
+            while (grid != valueStartingNode)
             {
-                key = nodesExplored[key];
-
-                if (key == valueStartingNode)
-                {
-                    break;
-                }
-
-                response.Add(key);
+                response.Add(grid);
+                grid = nodesExplored[grid];
             }
             stopWatch.Stop();
             var t = stopWatch.ElapsedMilliseconds;
@@ -258,43 +256,20 @@ namespace ConwayCenturyPuzzle
             return newGrid;
         }
 
-
-        public static char[,] GetSymmetry(char[,] pos)
-        {
-            for (var y = 0; y < gridLenghtY; y++)
-            {
-                for (var x = 0; x < gridLenghtX; x++)
-                {
-                    int start = 0;
-                    int end = gridLenghtX - 1;
-                    while (start < end)
-                    {
-                        var temp = pos[y, start];
-                        pos[y, start] = pos[y, end];
-                        pos[y, end] = temp;
-
-                        start++;
-                        end--;
-                    }
-
-                }
-            }
-
-            return pos;
-        }
-
-        public static string SavePosition(char[,] pos)
+        public static (string, string) SavePosition(char[,] pos)
         {
             str.Clear();
+            str2.Clear();
             for (var y = 0; y < gridLenghtY; y++)
             {
                 for (var x = 0; x < gridLenghtX; x++)
                 {
                     str.Append(shapesType[pos[y, x]]);
+                    str2.Append(shapesType[pos[y, gridLenghtX - 1 - x]]);
                 }
             }
 
-            return str.ToString();
+            return (str.ToString(), str2.ToString());
         }
 
         public static List<(char shapeToMove, char direction)> ShowMoves(char[,] grid)
@@ -362,25 +337,44 @@ namespace ConwayCenturyPuzzle
 
         private static void AssignTypeToEachShape(char[,] grid)
         {
+            Dictionary<string, List<char>> keyValuePairs = new Dictionary<string, List<char>>();
+            HashSet<char> a = new HashSet<char>() { 'A' };
+            char t = 'A';
+
             foreach (var c in grid)
             {
-                if (!shapesType.ContainsKey(c))
+                if (!a.Contains(c))
                 {
-                    if (c == 'A')
-                    {
-                        shapesType.Add(c, "A");
-                        continue;
-                    }
                     var (xMin, xMax, yMin, yMax) = GetDimPiece(c, grid);
-                    var type = $"D{xMax - xMin}{yMax - yMin}F";
-                    shapesType.Add(c, type);
+                    var type = $"{xMax - xMin}{yMax - yMin}";
+                    if (keyValuePairs.ContainsKey(type))
+                    {
+                        keyValuePairs[type].Add(c);
+                    }
+                    else
+                    {
+                        keyValuePairs.Add(type, new List<char> { c });
+                    }
+                    a.Add(c);
                 }
             }
+            shapesType.Add('A', 'A');
+
+            keyValuePairs.ForEach(k =>
+            {
+                t += 'A';
+                k.Value.ForEach(v =>
+                {
+                    shapesType.Add(v, t);
+                });
+
+            });
+
         }
 
         private static bool IsWinPosition(char[,] newPos)
         {
-            return newPos[3,1] == 'J' && newPos[3, 2] == 'J' && newPos[4, 1] == 'J' && newPos[4, 2] == 'J';
+            return newPos[3, 1] == 'J' && newPos[3, 2] == 'J' && newPos[4, 1] == 'J' && newPos[4, 2] == 'J';
         }
     }
 }
