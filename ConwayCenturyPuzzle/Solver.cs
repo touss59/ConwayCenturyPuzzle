@@ -5,26 +5,22 @@ using System.Linq;
 using MoreLinq;
 using System.Diagnostics;
 
-namespace ConwayCenturyPuzzle
-{
-    public class Solver
+namespace ConwayCenturyPuzzle {
+    public static class Solver
     {
-        private static readonly char[,] valueStartingNode = new char[1, 1] { { 'S' } };
-        private static readonly char[,] keyWinningNode = new char[1, 1] { { 'W' } };
         private static int gridLenghtY = 0;
         private static int gridLenghtX = 0;
-        private static Dictionary<char, char> shapesType = new Dictionary<char, char>();
-        private static readonly StringBuilder str = new StringBuilder();
-        private static readonly StringBuilder str2 = new StringBuilder();
-        public static List<char[,]> Solve(char[,] grid)
+        private static readonly Dictionary<char, char> shapesType = new Dictionary<char, char>();
+
+        public static List<(char pieceMoved, char direction)> Solve(char[,] grid)
         {
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Queue<char[,]> nodesToExplore = new Queue<char[,]>();
-            Dictionary<char[,], char[,]> nodesExplored = new Dictionary<char[,], char[,]>();
-            HashSet<string> positionVisited = new HashSet<string>();
+            var nodesToExplore = new Queue<char[,]>();
+            var nodesExplored = new Dictionary<char[,], (char[,] position, char pieceMoved, char direction)>();
+            var positionVisited = new HashSet<string>();
             bool isSolve = false;
 
             gridLenghtY = grid.GetLength(0);
@@ -34,13 +30,13 @@ namespace ConwayCenturyPuzzle
                 AssignTypeToEachShape(grid);
 
             nodesToExplore.Enqueue(grid);
-            nodesExplored.Add(grid, valueStartingNode);
-            var posSave = SavePosition(grid);
+            nodesExplored.Add(grid, (null,'_','_'));
+            var posSave = SavePositionWithIsSimmetry(grid);
             positionVisited.Add(posSave.Item1);
             positionVisited.Add(posSave.Item2);
 
-            HashSet<char> pieceVisited = new HashSet<char>();
-            List<char[,]> newPositions = new List<char[,]> { };
+            var pieceVisited = new HashSet<char>();
+            var newPositions = new List<(char[,] position, char pieceMoved, char direction)> { };
 
             while (nodesToExplore.Count > 0 && !isSolve)
             {
@@ -56,41 +52,29 @@ namespace ConwayCenturyPuzzle
                         if (!pieceVisited.Contains(grid[y, x]) && grid[y, x] != 'A')
                         {
                             pieceVisited.Add(grid[y, x]);
-                            var dimP = GetDimPiece(grid[y, x], grid);
-                            var (left, right, up, down) = WhereItCanMove(dimP, grid);
+                            var dimPiece = GetPieceDim(grid[y, x], grid);
+                            var moves = GetPossibleMoves(dimPiece, grid);
 
-                            if (left)
+                            foreach(var move in moves)
                             {
-                                newPositions.Add(Move(dimP, grid, 'L'));
-                            }
-                            if (right)
-                            {
-                                newPositions.Add(Move(dimP, grid, 'R'));
-                            }
-                            if (up)
-                            {
-                                newPositions.Add(Move(dimP, grid, 'U'));
-                            }
-                            if (down)
-                            {
-                                newPositions.Add(Move(dimP, grid, 'D'));
+                                newPositions.Add((Move(dimPiece, (char[,])grid.Clone(), move),grid[y,x],move));
                             }
                         }
                     }
                 }
-                foreach (var newPos in newPositions)
+                foreach (var (position, pieceMoved, direction) in newPositions)
                 {
-                    posSave = SavePosition(newPos);
+                    posSave = SavePositionWithIsSimmetry(position);
                     if (!positionVisited.Contains(posSave.Item1) && !positionVisited.Contains(posSave.Item2))
                     {
-                        nodesToExplore.Enqueue(newPos);
-                        nodesExplored.Add(newPos, grid);
+                        nodesToExplore.Enqueue(position);
+                        nodesExplored.Add(position, (grid,pieceMoved,direction));
                         positionVisited.Add(posSave.Item1);
                         positionVisited.Add(posSave.Item2);
 
-                        if (IsWinPosition(newPos))
+                        if (position.IsWinPosition())
                         {
-                            nodesExplored.Add(keyWinningNode, newPos);
+                            grid = position;
                             isSolve = true;
                             break;
                         }
@@ -100,166 +84,23 @@ namespace ConwayCenturyPuzzle
                 }
             }
 
-            grid = nodesExplored[keyWinningNode];
-            List<char[,]> response = new List<char[,]> { };
+            var node = nodesExplored[grid];
+            var response = new List<(char pieceMoved,char direction)>();
 
-            while (grid != valueStartingNode)
+            while (node.position != null)
             {
-                response.Add(grid);
-                grid = nodesExplored[grid];
+                response.Insert(0, (node.pieceMoved,node.direction));
+                node = nodesExplored[node.position];
             }
             stopWatch.Stop();
             var t = stopWatch.ElapsedMilliseconds;
             return response;
         }
 
-        public static (int xMin, int xMax, int yMin, int yMax) GetDimPiece(char piece, char[,] grid)
+        private static (string, string) SavePositionWithIsSimmetry(char[,] pos)
         {
-            (int xMin, int xMax, int yMin, int yMax) = (999, 0, 999, 0);
-            for (var y = 0; y < gridLenghtY; y++)
-            {
-                for (var x = 0; x < gridLenghtX; x++)
-                {
-                    if (grid[y, x] == piece)
-                    {
-                        xMin = xMin <= x ? xMin : x;
-                        xMax = xMax >= x ? xMax : x;
-                        yMin = yMin <= y ? yMin : y;
-                        yMax = yMax >= y ? yMax : y;
-                    }
-                }
-            }
-
-            return (xMin, xMax, yMin, yMax);
-        }
-
-        public static (bool left, bool right, bool up, bool down) WhereItCanMove((int xMin, int xMax, int yMin, int yMax) dimension, char[,] grid)
-        {
-            (bool left, bool right, bool up, bool down) = (true, true, true, true);
-
-            //check move left
-            if (dimension.xMin - 1 >= 0)
-            {
-                for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                {
-                    if (grid[y, dimension.xMin - 1] != 'A')
-                    {
-                        left = false;
-                    }
-                }
-            }
-            else
-            {
-                left = false;
-            }
-
-            //check move right
-            if (dimension.xMax + 1 < gridLenghtX)
-            {
-                for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                {
-                    if (grid[y, dimension.xMax + 1] != 'A')
-                    {
-                        right = false;
-                    }
-                }
-            }
-            else
-            {
-                right = false;
-            }
-
-            //check move up
-            if (dimension.yMin - 1 >= 0)
-            {
-                for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                {
-                    if (grid[dimension.yMin - 1, x] != 'A')
-                    {
-                        up = false;
-                    }
-                }
-            }
-            else
-            {
-                up = false;
-            }
-
-            //check move down
-            if (dimension.yMax + 1 < gridLenghtY)
-            {
-                for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                {
-                    if (grid[dimension.yMax + 1, x] != 'A')
-                    {
-                        down = false;
-                    }
-                }
-            }
-            else
-            {
-                down = false;
-            }
-
-            return (left, right, up, down);
-        }
-
-        public static char[,] Move((int xMin, int xMax, int yMin, int yMax) dimension, char[,] grid, char direction)
-        {
-            char[,] gridMoved = CopieGrid(grid);
-
-            switch (direction)
-            {
-                case 'U':
-                    for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                    {
-                        gridMoved[dimension.yMin - 1, x] = grid[dimension.yMin, x];
-                        gridMoved[dimension.yMax, x] = 'A';
-                    }
-                    break;
-                case 'D':
-                    for (var x = dimension.xMin; x <= dimension.xMax; x++)
-                    {
-                        gridMoved[dimension.yMax + 1, x] = grid[dimension.yMax, x];
-                        gridMoved[dimension.yMin, x] = 'A';
-                    }
-                    break;
-                case 'L':
-                    for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                    {
-                        gridMoved[y, dimension.xMin - 1] = grid[y, dimension.xMin];
-                        gridMoved[y, dimension.xMax] = 'A';
-                    }
-                    break;
-                default:
-                    for (var y = dimension.yMin; y <= dimension.yMax; y++)
-                    {
-                        gridMoved[y, dimension.xMax + 1] = grid[y, dimension.xMax];
-                        gridMoved[y, dimension.xMin] = 'A';
-                    }
-                    break;
-            }
-            return gridMoved;
-        }
-
-        public static char[,] CopieGrid(char[,] grid)
-        {
-            char[,] newGrid = new char[gridLenghtY, gridLenghtX];
-
-            for (var y = 0; y < gridLenghtY; y++)
-            {
-                for (var x = 0; x < gridLenghtX; x++)
-                {
-                    newGrid[y, x] = grid[y, x];
-                }
-            }
-            return newGrid;
-        }
-
-        public static (string, string) SavePosition(char[,] pos)
-        {
-            str.Clear();
-            str2.Clear();
+            var str = new StringBuilder();
+            var str2 = new StringBuilder();
             for (var y = 0; y < gridLenghtY; y++)
             {
                 for (var x = 0; x < gridLenghtX; x++)
@@ -272,109 +113,212 @@ namespace ConwayCenturyPuzzle
             return (str.ToString(), str2.ToString());
         }
 
-        public static List<(char shapeToMove, char direction)> ShowMoves(char[,] grid)
+        private static List<char> GetPossibleMoves(PieceDimension dimension, char[,] grid)
         {
-            List<char[,]> response = Solve(grid);
-            response.Reverse();
-            List<(char, char)> moves = new List<(char, char)> { };
+            var PossibleMoves = new List<char>();
 
+            if (CanGoLeft(dimension, grid))
+                PossibleMoves.Add('L');
 
-            for (var i = 1; i < response.Count; i++)
+            if (CanGoRight(dimension, grid))
+                PossibleMoves.Add('R');
+
+            if (CanGoUp(dimension, grid))
+                PossibleMoves.Add('U');
+
+            if (CanGoDown(dimension, grid))
+                PossibleMoves.Add('D');
+
+            return PossibleMoves;
+        }
+
+        #region checkMovesMethods
+        private static bool CanGoLeft(PieceDimension dimension, char[,] grid)
+        {
+            var goLeft = false;
+            if (dimension.XMin - 1 >= 0)
             {
-                moves.Add(GetMove(response[i - 1], response[i]));
+                for (var y = dimension.YMin; y <= dimension.YMax; y++)
+                {
+                    if (grid[y, dimension.XMin - 1] != 'A')
+                    {
+                        return goLeft;
+                    }
+                }
+                goLeft = true;
             }
-            return moves;
-        }
-
-
-        public static (char shapeMove, char direction) GetMove(char[,] previous, char[,] now)
-        {
-            char shapeMove = GetShapeMoved(previous, now);
-
-            (int xMin, int xMax, int yMin, int yMax) dimP = GetDimPiece(shapeMove, previous);
-            (int xMin, int xMax, int yMin, int yMax) dimN = GetDimPiece(shapeMove, now);
-
-            char direction = GetDirection(dimP, dimN);
-
-            return (shapeMove, direction);
+            return goLeft;
 
         }
 
-        public static char GetShapeMoved(char[,] previous, char[,] now)
+        private static bool CanGoRight(PieceDimension dimension, char[,] grid)
         {
+            var goRight = false;
+            if (dimension.XMax + 1 < gridLenghtX)
+            {
+                for (var y = dimension.YMin; y <= dimension.YMax; y++)
+                {
+                    if (grid[y, dimension.XMax + 1] != 'A')
+                    {
+                        return goRight;
+                    }
+                }
+                goRight = true;
+            }
+            return goRight;
+
+        }
+
+        private static bool CanGoUp(PieceDimension dimension, char[,] grid)
+        {
+            var goUp = false;
+            if (dimension.YMin - 1 >= 0)
+            {
+                for (var x = dimension.XMin; x <= dimension.XMax; x++)
+                {
+                    if (grid[dimension.YMin - 1, x] != 'A')
+                    {
+                        return goUp;
+                    }
+                }
+                goUp = true;
+            }
+            return goUp;
+
+        }
+
+        private static bool CanGoDown(PieceDimension dimension, char[,] grid)
+        {
+            var goDown = false;
+            if (dimension.YMax + 1 < gridLenghtY)
+            {
+                for (var x = dimension.XMin; x <= dimension.XMax; x++)
+                {
+                    if (grid[dimension.YMax + 1, x] != 'A')
+                    {
+                        return goDown;
+                    }
+                }
+                goDown = true;
+            }
+            return goDown;
+
+        }
+        #endregion
+
+        private static char[,] Move(PieceDimension dimension, char[,] grid, char direction)
+        {
+            switch (direction)
+            {
+                case 'U':
+                    for (var x = dimension.XMin; x <= dimension.XMax; x++)
+                    {
+                        grid[dimension.YMin - 1, x] = grid[dimension.YMin, x];
+                        grid[dimension.YMax, x] = 'A';
+                    }
+                    break;
+                case 'D':
+                    for (var x = dimension.XMin; x <= dimension.XMax; x++)
+                    {
+                        grid[dimension.YMax + 1, x] = grid[dimension.YMax, x];
+                        grid[dimension.YMin, x] = 'A';
+                    }
+                    break;
+                case 'L':
+                    for (var y = dimension.YMin; y <= dimension.YMax; y++)
+                    {
+                        grid[y, dimension.XMin - 1] = grid[y, dimension.XMin];
+                        grid[y, dimension.XMax] = 'A';
+                    }
+                    break;
+                default:
+                    for (var y = dimension.YMin; y <= dimension.YMax; y++)
+                    {
+                        grid[y, dimension.XMax + 1] = grid[y, dimension.XMax];
+                        grid[y, dimension.XMin] = 'A';
+                    }
+                    break;
+            }
+            return grid;
+        }
+
+        private static PieceDimension GetPieceDim(char piece, char[,] grid)
+        {
+            PieceDimension dimP = new PieceDimension(999, 0, 999, 0);
             for (var y = 0; y < gridLenghtY; y++)
             {
                 for (var x = 0; x < gridLenghtX; x++)
                 {
-                    if (previous[y, x] != now[y, x] && now[y, x] != 'A')
+                    if (grid[y, x] == piece)
                     {
-                        return now[y, x];
+                        dimP.XMin =dimP.XMin <= x ? dimP.XMin : x;
+                        dimP.XMax =dimP.XMax >= x ? dimP.XMax : x;
+                        dimP.YMin =dimP.YMin <= y ? dimP.YMin : y;
+                        dimP.YMax =dimP.YMax >= y ? dimP.YMax : y;
                     }
                 }
             }
-            return 'T';
-        }
 
-        public static char GetDirection((int xMin, int xMax, int yMin, int yMax) dimP, (int xMin, int xMax, int yMin, int yMax) dimN)
-        {
-            if (dimN.xMin < dimP.xMin)
-            {
-                return 'L';
-            }
-            else if (dimN.xMin > dimP.xMin)
-            {
-                return 'R';
-            }
-            else if (dimN.yMin < dimP.yMin)
-            {
-                return 'U';
-            }
-            else
-            {
-                return 'D';
-            }
+            return dimP;
         }
 
         private static void AssignTypeToEachShape(char[,] grid)
         {
-            Dictionary<string, List<char>> keyValuePairs = new Dictionary<string, List<char>>();
-            HashSet<char> a = new HashSet<char>() { 'A' };
-            char t = 'A';
+            char ShapeType = 'A';
+            Dictionary<string, List<char>> TypesWithShapesAssociated = new Dictionary<string, List<char>>();
+            HashSet<char> shapesVisited = new HashSet<char>() { ShapeType};
 
-            foreach (var c in grid)
+
+            foreach (var shape in grid)
             {
-                if (!a.Contains(c))
+                if (!shapesVisited.Contains(shape))
                 {
-                    var (xMin, xMax, yMin, yMax) = GetDimPiece(c, grid);
-                    var type = $"{xMax - xMin}{yMax - yMin}";
-                    if (keyValuePairs.ContainsKey(type))
+                    shapesVisited.Add(shape);
+                    var dimP = GetPieceDim(shape, grid);
+                    var type = $"{dimP.XMax - dimP.XMin}{dimP.YMax - dimP.YMin}";
+                    if (TypesWithShapesAssociated.ContainsKey(type))
                     {
-                        keyValuePairs[type].Add(c);
+                        TypesWithShapesAssociated[type].Add(shape);
                     }
                     else
                     {
-                        keyValuePairs.Add(type, new List<char> { c });
+                        TypesWithShapesAssociated.Add(type, new List<char> { shape });
                     }
-                    a.Add(c);
                 }
             }
-            shapesType.Add('A', 'A');
+            shapesType.Add(ShapeType, ShapeType);
 
-            keyValuePairs.ForEach(k =>
+            TypesWithShapesAssociated.ForEach(k =>
             {
-                t += 'A';
+                ShapeType += (char)1;
                 k.Value.ForEach(v =>
                 {
-                    shapesType.Add(v, t);
+                    shapesType.Add(v, ShapeType);
                 });
 
             });
 
         }
 
-        private static bool IsWinPosition(char[,] newPos)
+        private static bool IsWinPosition(this char[,] position)
         {
-            return newPos[3, 1] == 'J' && newPos[3, 2] == 'J' && newPos[4, 1] == 'J' && newPos[4, 2] == 'J';
+            return position[3, 1] == 'J' && position[3, 2] == 'J' && position[4, 1] == 'J' && position[4, 2] == 'J';
+        }
+
+        private class PieceDimension
+        {
+            public int XMin { get; set; }
+            public int XMax { get; set; }
+            public int YMin { get; set; }
+            public int YMax { get; set; }
+
+            public PieceDimension(int xMin, int xMax, int yMin, int yMax)
+            {
+                this.XMin = xMin;
+                this.XMax = xMax;
+                this.YMin = yMin;
+                this.YMax = yMax;
+            }
         }
     }
 }

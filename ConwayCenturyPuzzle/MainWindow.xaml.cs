@@ -31,6 +31,8 @@ namespace ConwayCenturyPuzzle
                 .Select(c => c as Rectangle)
                 .ToList();
 
+            PuzzleSettings.SetRectanglePosition(rectangles);
+
             var filePathSaveState = System.IO.Path.Combine(Environment.CurrentDirectory, "saveState.txt");
 
             if (File.Exists(filePathSaveState))
@@ -49,7 +51,6 @@ namespace ConwayCenturyPuzzle
                 }
 
             }
-
 
             dispatcherTimer = new DispatcherTimer
             {
@@ -122,7 +123,7 @@ namespace ConwayCenturyPuzzle
                 }
                 index = 0;
                 GetPositionRectangles();
-                moves = Solver.ShowMoves(position);
+                moves = Solver.Solve(position);
                 dispatcherTimer.Start();
             } else if (e.Key == Key.R)
             {
@@ -240,47 +241,38 @@ namespace ConwayCenturyPuzzle
 
         }
 
-        private void ResetPositions()
+        private void ResetPositions() => PuzzleSettings.SetRectanglePosition(rectangles);
+
+    }
+
+
+
+    public static class PuzzleSettings
+    {
+        private static readonly Dictionary<string, (int x,int y)> rectanglesInitialCoords = new Dictionary<string, (int x,int y)>
         {
-            var a = this.canvasMain.Children;
+            ["V"] = (0,1),
+            ["X"] = (1,2),
+            ["W"] = (3,1),
+            ["R"] = (0,0),
+            ["r"] = (3,0),
+            ["k"] = (0,3),
+            ["K"] = (3,3),
+            ["M"] = (2,4),
+            ["Y"] = (0,4),
+            ["J"] = (1,0)
+        };
 
-            foreach(var e in a)
+        public static void SetRectanglePosition(IEnumerable<Rectangle> rectangles)
+        {
+            foreach (var rectangle in rectangles)
             {
-                var t = e.GetType();
+                if (rectanglesInitialCoords.TryGetValue(rectangle.Name, out var coord))
+                {
+                    Canvas.SetLeft(rectangle, coord.x * 100 + 100);
+                    Canvas.SetTop(rectangle, coord.y * 100 + 100);
+                }
             }
-
-            Canvas.SetLeft(V, 100);
-            Canvas.SetTop(V, 200);
-
-            Canvas.SetLeft(X, 200);
-            Canvas.SetTop(X, 300);
-
-            Canvas.SetLeft(W, 400);
-            Canvas.SetTop(W, 200);
-
-            Canvas.SetLeft(R, 100);
-            Canvas.SetTop(R, 100);
-
-            Canvas.SetLeft(r, 400);
-            Canvas.SetTop(r, 100);
-
-            Canvas.SetLeft(k, 100);
-            Canvas.SetTop(k, 400);
-
-            Canvas.SetLeft(K, 400);
-            Canvas.SetTop(K, 400);
-
-            Canvas.SetLeft(M, 300);
-            Canvas.SetTop(M, 500);
-
-            Canvas.SetLeft(Y, 100);
-            Canvas.SetTop(Y, 500);
-
-            Canvas.SetLeft(J, 200);
-            Canvas.SetTop(J, 100);
-
         }
-
-
     }
 }
