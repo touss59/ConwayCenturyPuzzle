@@ -5,14 +5,15 @@ using System.Linq;
 using MoreLinq;
 using System.Diagnostics;
 
-namespace ConwayCenturyPuzzle {
+namespace ConwayCenturyPuzzle
+{
     public static class Solver
     {
         private static int gridLenghtY = 0;
         private static int gridLenghtX = 0;
         private static readonly Dictionary<char, char> shapesType = new Dictionary<char, char>();
 
-        public static List<(char pieceMoved, char direction)> Solve(char[,] grid)
+        public static LinkedList<(char pieceMoved, char direction)> Solve(char[,] grid)
         {
 
             Stopwatch stopWatch = new Stopwatch();
@@ -30,8 +31,8 @@ namespace ConwayCenturyPuzzle {
                 AssignTypeToEachShape(grid);
 
             nodesToExplore.Enqueue(grid);
-            nodesExplored.Add(grid, (null,'_','_'));
-            var posSave = SavePositionWithIsSimmetry(grid);
+            nodesExplored.Add(grid, (null, '_', '_'));
+            var posSave = SavePositionWithHerSimmetry(grid);
             positionVisited.Add(posSave.Item1);
             positionVisited.Add(posSave.Item2);
 
@@ -55,20 +56,20 @@ namespace ConwayCenturyPuzzle {
                             var dimPiece = GetPieceDim(grid[y, x], grid);
                             var moves = GetPossibleMoves(dimPiece, grid);
 
-                            foreach(var move in moves)
+                            foreach (var move in moves)
                             {
-                                newPositions.Add((Move(dimPiece, (char[,])grid.Clone(), move),grid[y,x],move));
+                                newPositions.Add((Move(dimPiece, (char[,])grid.Clone(), move), grid[y, x], move));
                             }
                         }
                     }
                 }
                 foreach (var (position, pieceMoved, direction) in newPositions)
                 {
-                    posSave = SavePositionWithIsSimmetry(position);
+                    posSave = SavePositionWithHerSimmetry(position);
                     if (!positionVisited.Contains(posSave.Item1) && !positionVisited.Contains(posSave.Item2))
                     {
                         nodesToExplore.Enqueue(position);
-                        nodesExplored.Add(position, (grid,pieceMoved,direction));
+                        nodesExplored.Add(position, (grid, pieceMoved, direction));
                         positionVisited.Add(posSave.Item1);
                         positionVisited.Add(posSave.Item2);
 
@@ -85,11 +86,11 @@ namespace ConwayCenturyPuzzle {
             }
 
             var node = nodesExplored[grid];
-            var response = new List<(char pieceMoved,char direction)>();
+            var response = new LinkedList<(char pieceMoved, char direction)>();
 
             while (node.position != null)
             {
-                response.Insert(0, (node.pieceMoved,node.direction));
+                response.AddFirst((node.pieceMoved, node.direction));
                 node = nodesExplored[node.position];
             }
             stopWatch.Stop();
@@ -97,7 +98,7 @@ namespace ConwayCenturyPuzzle {
             return response;
         }
 
-        private static (string, string) SavePositionWithIsSimmetry(char[,] pos)
+        private static (string, string) SavePositionWithHerSimmetry(char[,] pos)
         {
             var str = new StringBuilder();
             var str2 = new StringBuilder();
@@ -133,6 +134,7 @@ namespace ConwayCenturyPuzzle {
         }
 
         #region checkMovesMethods
+
         private static bool CanGoLeft(PieceDimension dimension, char[,] grid)
         {
             var goLeft = false;
@@ -251,10 +253,10 @@ namespace ConwayCenturyPuzzle {
                 {
                     if (grid[y, x] == piece)
                     {
-                        dimP.XMin =dimP.XMin <= x ? dimP.XMin : x;
-                        dimP.XMax =dimP.XMax >= x ? dimP.XMax : x;
-                        dimP.YMin =dimP.YMin <= y ? dimP.YMin : y;
-                        dimP.YMax =dimP.YMax >= y ? dimP.YMax : y;
+                        dimP.XMin = dimP.XMin <= x ? dimP.XMin : x;
+                        dimP.XMax = dimP.XMax >= x ? dimP.XMax : x;
+                        dimP.YMin = dimP.YMin <= y ? dimP.YMin : y;
+                        dimP.YMax = dimP.YMax >= y ? dimP.YMax : y;
                     }
                 }
             }
@@ -266,7 +268,7 @@ namespace ConwayCenturyPuzzle {
         {
             char ShapeType = 'A';
             Dictionary<string, List<char>> TypesWithShapesAssociated = new Dictionary<string, List<char>>();
-            HashSet<char> shapesVisited = new HashSet<char>() { ShapeType};
+            HashSet<char> shapesVisited = new HashSet<char>() { ShapeType };
 
 
             foreach (var shape in grid)

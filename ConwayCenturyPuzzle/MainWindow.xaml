@@ -13,6 +13,8 @@
         <Style x:Key="DraggableElement" TargetType="Rectangle">
             <Setter Property="Stroke" Value="White"/>
             <Setter Property="StrokeThickness" Value="4"/>
+            <EventSetter Event="MouseEnter" Handler="MouseHand"/>
+            <EventSetter Event="MouseLeave" Handler="MouseArrow"/>
             <EventSetter Event="PreviewMouseDown" Handler="UserControlPreviewMouseDown"/>
         </Style>
     </Window.Resources>
