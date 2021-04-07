@@ -11,7 +11,6 @@ namespace ConwayCenturyPuzzle
     {
         private static int gridLenghtY = 0;
         private static int gridLenghtX = 0;
-        private static readonly Dictionary<char, char> shapesType = new Dictionary<char, char>();
 
         public static LinkedList<(char pieceMoved, char direction)> Solve(char[,] grid)
         {
@@ -27,22 +26,18 @@ namespace ConwayCenturyPuzzle
             gridLenghtY = grid.GetLength(0);
             gridLenghtX = grid.GetLength(1);
 
-            if (shapesType.Count == 0)
-                AssignTypeToEachShape(grid);
+            var shapesType = AssignTypeToEachShape(grid);
 
             nodesToExplore.Enqueue(grid);
             nodesExplored.Add(grid, (null, '_', '_'));
-            var posSave = SavePositionWithHerSimmetry(grid);
+            var posSave = SavePositionWithHerSimmetry(grid,shapesType);
             positionVisited.Add(posSave.Item1);
             positionVisited.Add(posSave.Item2);
 
-            var pieceVisited = new HashSet<char>();
-            var newPositions = new List<(char[,] position, char pieceMoved, char direction)> { };
-
             while (nodesToExplore.Count > 0 && !isSolve)
             {
-                pieceVisited.Clear();
-                newPositions.Clear();
+                var pieceVisited = new HashSet<char>();
+                var newPositions = new List<(char[,] position, char pieceMoved, char direction)> { };
 
                 grid = nodesToExplore.Dequeue();
 
@@ -50,7 +45,7 @@ namespace ConwayCenturyPuzzle
                 {
                     for (var x = 0; x < gridLenghtX; x++)
                     {
-                        if (!pieceVisited.Contains(grid[y, x]) && grid[y, x] != 'A')
+                        if (!pieceVisited.Contains(grid[y, x]) && !grid[y, x].Equals('A'))
                         {
                             pieceVisited.Add(grid[y, x]);
                             var dimPiece = GetPieceDim(grid[y, x], grid);
@@ -65,7 +60,7 @@ namespace ConwayCenturyPuzzle
                 }
                 foreach (var (position, pieceMoved, direction) in newPositions)
                 {
-                    posSave = SavePositionWithHerSimmetry(position);
+                    posSave = SavePositionWithHerSimmetry(position, shapesType);
                     if (!positionVisited.Contains(posSave.Item1) && !positionVisited.Contains(posSave.Item2))
                     {
                         nodesToExplore.Enqueue(position);
@@ -98,7 +93,7 @@ namespace ConwayCenturyPuzzle
             return response;
         }
 
-        private static (string, string) SavePositionWithHerSimmetry(char[,] pos)
+        private static (string, string) SavePositionWithHerSimmetry(char[,] pos, Dictionary<char, char> shapesType)
         {
             var str = new StringBuilder();
             var str2 = new StringBuilder();
@@ -264,47 +259,40 @@ namespace ConwayCenturyPuzzle
             return dimP;
         }
 
-        private static void AssignTypeToEachShape(char[,] grid)
+        private static Dictionary<char,char> AssignTypeToEachShape(char[,] grid)
         {
-            char ShapeType = 'A';
-            Dictionary<string, List<char>> TypesWithShapesAssociated = new Dictionary<string, List<char>>();
-            HashSet<char> shapesVisited = new HashSet<char>() { ShapeType };
+            var ShapeType = 'A';
+            var ConvertTypeToChar = new Dictionary<string, char>();
 
+            return grid.GetDistinctShapes()
+                       .Select(shape =>
+                           {
+                               var dimP = GetPieceDim(shape, grid);
+                               var type = shape.Equals('A')? shape.ToString() : $"{dimP.XMax - dimP.XMin}{dimP.YMax - dimP.YMin}";
+                               if (!ConvertTypeToChar.ContainsKey(type))
+                                   ConvertTypeToChar.Add(type,ShapeType++);
 
-            foreach (var shape in grid)
-            {
-                if (!shapesVisited.Contains(shape))
-                {
-                    shapesVisited.Add(shape);
-                    var dimP = GetPieceDim(shape, grid);
-                    var type = $"{dimP.XMax - dimP.XMin}{dimP.YMax - dimP.YMin}";
-                    if (TypesWithShapesAssociated.ContainsKey(type))
-                    {
-                        TypesWithShapesAssociated[type].Add(shape);
-                    }
-                    else
-                    {
-                        TypesWithShapesAssociated.Add(type, new List<char> { shape });
-                    }
-                }
-            }
-            shapesType.Add(ShapeType, ShapeType);
-
-            TypesWithShapesAssociated.ForEach(k =>
-            {
-                ShapeType += (char)1;
-                k.Value.ForEach(v =>
-                {
-                    shapesType.Add(v, ShapeType);
-                });
-
-            });
-
+                               return (shape, ConvertTypeToChar[type]);
+                           }
+                       )
+                       .ToDictionary();
         }
 
         private static bool IsWinPosition(this char[,] position)
         {
             return position[3, 1] == 'J' && position[3, 2] == 'J' && position[4, 1] == 'J' && position[4, 2] == 'J';
+        }
+
+        private static IEnumerable<char> GetDistinctShapes(this char[,] array)
+        {
+            var distinctChars = new List<char>();
+            
+            foreach(var c in array)
+            {
+                distinctChars.Add(c);
+            }
+
+            return distinctChars.Distinct();
         }
 
         private class PieceDimension

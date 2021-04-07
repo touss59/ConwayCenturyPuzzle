@@ -27,7 +27,7 @@ namespace ConwayCenturyPuzzle
         {
             InitializeComponent();
             rectangles = canvasMain.Children.OfType<UIElement>()
-                .Where(c => c.GetType().Name == nameof(Rectangle))
+                .Where(c => c.GetType().Name.Equals(nameof(Rectangle)))
                 .Select(c => c as Rectangle)
                 .ToList();
 
@@ -45,7 +45,7 @@ namespace ConwayCenturyPuzzle
                 foreach (var line in lines)
                 {
                     (string name, double left, double top) = (line.Split(',')[0], Convert.ToInt32(line.Split(',')[1]), Convert.ToInt32(line.Split(',')[2]));
-                    var rectangle = rectangles.Where(r => r.Name == name).FirstOrDefault();
+                    var rectangle = rectangles.Where(r => r.Name.Equals(name)).FirstOrDefault();
                     Canvas.SetLeft(rectangle, left);
                     Canvas.SetTop(rectangle, top);
                 }
@@ -100,7 +100,7 @@ namespace ConwayCenturyPuzzle
  
             if (move != null)
             {
-                var shape = rectangles.Where(r => r.Name == move.Value.rectangleToMove.ToString()).FirstOrDefault();
+                var shape = rectangles.Where(r => r.Name.Equals(move.Value.rectangleToMove.ToString())).FirstOrDefault();
 
                 switch (move.Value.direction)
                 {
@@ -188,7 +188,7 @@ namespace ConwayCenturyPuzzle
             var collisionY = false;
             foreach (var r in rectangles)
             {
-                if (r != dragRectangle && !(r.Name == "Exit" && dragRectangle.Name == "J"))
+                if (r != dragRectangle && !(r.Name.Equals("Exit") && dragRectangle.Name.Equals("J")))
                 {
                     var thisRectX = new Rect(newPosition.X - this.offset.X + 6, Canvas.GetTop(dragRectangle) + 6, dragRectangle.Width - 12, dragRectangle.Height - 12);
                     var thisRectY = new Rect(Canvas.GetLeft(dragRectangle) + 6, newPosition.Y - this.offset.Y + 6, dragRectangle.Width - 12, dragRectangle.Height - 12);
