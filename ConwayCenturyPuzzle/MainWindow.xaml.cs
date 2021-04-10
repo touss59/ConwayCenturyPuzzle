@@ -60,7 +60,7 @@ namespace ConwayCenturyPuzzle
             dispatcherTimer.Tick += new EventHandler(ShowSolution);
         }
 
-        public void ExecuteSolution(object sender, KeyEventArgs e)
+        private void ExecuteSolution(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -100,21 +100,21 @@ namespace ConwayCenturyPuzzle
  
             if (move != null)
             {
-                var shape = rectangles.Where(r => r.Name.Equals(move.Value.rectangleToMove.ToString())).FirstOrDefault();
+                var rectangle = rectangles.Where(r => r.Name.Equals(move.Value.rectangleToMove.ToString())).FirstOrDefault();
 
                 switch (move.Value.direction)
                 {
                     case 'L':
-                        Canvas.SetLeft(shape, Canvas.GetLeft(shape) - SquareUnit);
+                        Canvas.SetLeft(rectangle, Canvas.GetLeft(rectangle) - SquareUnit);
                         break;
                     case 'U':
-                        Canvas.SetTop(shape, Canvas.GetTop(shape) - SquareUnit);
+                        Canvas.SetTop(rectangle, Canvas.GetTop(rectangle) - SquareUnit);
                         break;
                     case 'R':
-                        Canvas.SetLeft(shape, Canvas.GetLeft(shape) + SquareUnit);
+                        Canvas.SetLeft(rectangle, Canvas.GetLeft(rectangle) + SquareUnit);
                         break;
                     case 'D':
-                        Canvas.SetTop(shape, Canvas.GetTop(shape) + SquareUnit);
+                        Canvas.SetTop(rectangle, Canvas.GetTop(rectangle) + SquareUnit);
                         break;
                     default:
                         Console.WriteLine("Default case");
@@ -218,7 +218,7 @@ namespace ConwayCenturyPuzzle
             int maxX = Convert.ToInt32(rect.BottomRight.X / SquareUnit) - 2;
             int maxY = Convert.ToInt32(rect.BottomRight.Y / SquareUnit) - 2;
 
-            //Rearrange the rectangles correctly before showing the solution
+            //Rearrange the rectangles correctly before running the solution
             Canvas.SetLeft(rectangle, minX * 100 + 100);
             Canvas.SetTop(rectangle, minY * 100 + 100);
             /****************************************************************/

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ConwayCenturyPuzzle"
         mc:Ignorable="d"
-        Title="MainWindow" Height="750" Width="650"
+        Title="MainWindow" Height="900" Width="600"
         Closing="Window_Closing" 
         KeyDown="ExecuteSolution">
 
@@ -20,7 +20,7 @@
     </Window.Resources>
 
     <Canvas x:Name="canvasMain"
-            ClipToBounds="True" Width="600" Height="700"
+            ClipToBounds="True"
             PreviewMouseUp="CanvasMainMouseUp"
             PreviewMouseMove="CanvasMainMouseMove">
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="V" Fill="LightBlue" Width="100" Height="200" />
