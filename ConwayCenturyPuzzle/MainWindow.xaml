@@ -3,19 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ConwayCenturyPuzzle"
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="600"
-        Closing="Window_Closing" 
+        Closing="Window_Closing"
         KeyDown="ExecuteSolution">
 
     <Window.Resources>
         <Style x:Key="DraggableElement" TargetType="Rectangle">
-            <Setter Property="Stroke" Value="White"/>
-            <Setter Property="StrokeThickness" Value="4"/>
-            <EventSetter Event="MouseEnter" Handler="MouseHand"/>
-            <EventSetter Event="MouseLeave" Handler="MouseArrow"/>
-            <EventSetter Event="PreviewMouseDown" Handler="UserControlPreviewMouseDown"/>
+            <Setter Property="Stroke" Value="White" />
+            <Setter Property="StrokeThickness" Value="4" />
+            <EventSetter Event="MouseEnter" Handler="MouseHand" />
+            <EventSetter Event="MouseLeave" Handler="MouseArrow" />
+            <EventSetter Event="PreviewMouseDown" Handler="UserControlPreviewMouseDown" />
         </Style>
     </Window.Resources>
 
@@ -24,23 +23,23 @@
             PreviewMouseUp="CanvasMainMouseUp"
             PreviewMouseMove="CanvasMainMouseMove">
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="V" Fill="LightBlue" Width="100" Height="200" />
-        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="X" Fill="LightBlue" Width="100" Height="200"/>
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="X" Fill="LightBlue" Width="100" Height="200" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="W" Fill="LightBlue" Width="100" Height="200" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="R" Fill="red" Width="100" Height="100" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="r" Fill="red" Width="100" Height="100" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="k" Fill="red" Width="100" Height="100" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="K" Fill="red" Width="100" Height="100" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="M" Fill="Green" Width="200" Height="100" />
-        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="Y" Fill="Green" Width="200" Height="100"/>
+        <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="Y" Fill="Green" Width="200" Height="100" />
         <Rectangle Style="{ StaticResource  DraggableElement}" x:Name="J" Fill="Yellow" Width="200" Height="200" />
 
         <Rectangle
-             Canvas.Left="100"
-             Canvas.Top="100"
-             Width="400"
-             Height="4"
-             Stroke="Black"
-             StrokeThickness="4"/>
+            Canvas.Left="100"
+            Canvas.Top="100"
+            Width="400"
+            Height="4"
+            Stroke="Black"
+            StrokeThickness="4" />
 
         <Rectangle
             Canvas.Left="100"
@@ -48,7 +47,7 @@
             Width="100"
             Height="4"
             Stroke="Black"
-            StrokeThickness="4"/>
+            StrokeThickness="4" />
 
         <Rectangle
             x:Name="Exit"
@@ -57,7 +56,7 @@
             Height="4"
             Width="200"
             Stroke="Gray"
-            StrokeThickness="4"/>
+            StrokeThickness="4" />
 
         <Rectangle
             Canvas.Left="400"
@@ -65,7 +64,7 @@
             Width="100"
             Height="4"
             Stroke="Black"
-            StrokeThickness="4"/>
+            StrokeThickness="4" />
 
         <Rectangle
             Canvas.Left="100"
@@ -73,7 +72,7 @@
             Height="500"
             Width="4"
             Stroke="Black"
-            StrokeThickness="4"/>
+            StrokeThickness="4" />
 
         <Rectangle
             Canvas.Left="500"
@@ -81,7 +80,7 @@
             Height="500"
             Width="4"
             Stroke="Black"
-            StrokeThickness="4"/>
+            StrokeThickness="4" />
 
     </Canvas>
 </Window>

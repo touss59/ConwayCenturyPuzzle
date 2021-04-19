@@ -9,15 +9,16 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.ComponentModel;
 using System.IO;
+using Path = System.IO.Path;
 
 namespace ConwayCenturyPuzzle
 {
     public partial class MainWindow : Window
     {
         private readonly char[,] position = new char[5, 4];
-        private readonly int SquareUnit = 100;
+        private const int SquareUnit = 100;
         private Point offset;
-        private Rectangle dragRectangle = null;
+        private Rectangle dragRectangle;
         private readonly List<Rectangle> rectangles;
         private readonly DispatcherTimer dispatcherTimer;
         private LinkedListNode<(char rectangleToMove, char direction)> move;
@@ -40,12 +41,12 @@ namespace ConwayCenturyPuzzle
                 using var fs = File.OpenRead(filePathSaveState);
                 using var sr = new StreamReader(fs);
 
-                string[] lines = sr.ReadLine().Split(';');
+                var lines = sr.ReadLine()?.Split(';');
 
                 foreach (var line in lines)
                 {
-                    (string name, double left, double top) = (line.Split(',')[0], Convert.ToInt32(line.Split(',')[1]), Convert.ToInt32(line.Split(',')[2]));
-                    var rectangle = rectangles.Where(r => r.Name.Equals(name)).FirstOrDefault();
+                    var (name, left, top) = (line.Split(',')[0], Convert.ToInt32(line.Split(',')[1]), Convert.ToInt32(line.Split(',')[2]));
+                    var rectangle = rectangles.FirstOrDefault(r => r.Name.Equals(name));
                     Canvas.SetLeft(rectangle, left);
                     Canvas.SetTop(rectangle, top);
                 }
@@ -62,36 +63,37 @@ namespace ConwayCenturyPuzzle
 
         private void ExecuteSolution(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            switch (e.Key)
             {
-                FillArrayWithInitValue(position, 'A');
-                FillArrayWithRectangles();
-                moves = Solver.Solve(position);
-                move = moves.Find(moves.First());
-                dispatcherTimer.Start();
-                return;
+                case Key.Enter:
+                    FillArrayWithInitValue(position, 'A');
+                    FillArrayWithRectangles();
+                    moves = Solver.Solve(position);
+                    move = moves.Find(moves.First());
+                    dispatcherTimer.Start();
+                    return;
+                case Key.R:
+                    dispatcherTimer.Stop();
+                    ResetPositions();
+                    return;
+                default:
+                    dispatcherTimer.Stop();
+                    break;
             }
-            else if (e.Key == Key.R)
-            {
-                dispatcherTimer.Stop();
-                ResetPositions();
-                return;
-            }
-            dispatcherTimer.Stop();
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            string rtfFile = System.IO.Path.Combine(Environment.CurrentDirectory, "saveState.txt");
+            var rtfFile = Path.Combine(Environment.CurrentDirectory, "saveState.txt");
             var fileStream = File.Create(rtfFile);
             using var streamWriter = new StreamWriter(fileStream);
             var state = string
                 .Join(';', rectangles
-                    .Where(r => r.Name.Length == 1)
-                    .Select(r => r.Name + ',' + Math.Round(Canvas.GetLeft(r)).ToString() + ',' + Math.Round(Canvas.GetTop(r)).ToString()));
+                    .Where(rectangle => rectangle.Name.Length == 1)
+                    .Select(rectangle => rectangle.Name + ',' + Math.Round(Canvas.GetLeft(rectangle)) + ',' +
+                                         Math.Round(Canvas.GetTop(rectangle))));
 
             streamWriter.Write(state);
-
         }
 
 
@@ -100,7 +102,7 @@ namespace ConwayCenturyPuzzle
  
             if (move != null)
             {
-                var rectangle = rectangles.Where(r => r.Name.Equals(move.Value.rectangleToMove.ToString())).FirstOrDefault();
+                var rectangle = rectangles.FirstOrDefault(r => r.Name.Equals(move.Value.rectangleToMove.ToString()));
 
                 switch (move.Value.direction)
                 {
@@ -128,46 +130,39 @@ namespace ConwayCenturyPuzzle
 
         private void UserControlPreviewMouseDown(object sender, MouseEventArgs e)
         {
-            this.dragRectangle = sender as Rectangle;
-            if (this.dragRectangle != null)
-            {
-                this.offset = e.GetPosition(this.canvasMain);
-                this.offset.Y -= Canvas.GetTop(this.dragRectangle);
-                this.offset.X -= Canvas.GetLeft(this.dragRectangle);
-                this.canvasMain.CaptureMouse();
-            }
+            dragRectangle = sender as Rectangle;
+            if (dragRectangle == null) return;
+            offset = e.GetPosition(canvasMain);
+            offset.Y -= Canvas.GetTop(dragRectangle);
+            offset.X -= Canvas.GetLeft(dragRectangle);
+            canvasMain.CaptureMouse();
         }
 
         private void CanvasMainMouseUp(object sender, MouseEventArgs e)
         {
-            this.dragRectangle = null;
+            dragRectangle = null;
 
-            this.canvasMain.ReleaseMouseCapture();
+            canvasMain.ReleaseMouseCapture();
         }
 
         private void CanvasMainMouseMove(object sender, MouseEventArgs e)
         {
             var newPosition = e.GetPosition(sender as IInputElement);
 
-            if (this.dragRectangle == null || MouseLeaveDragRectangle(newPosition) || dispatcherTimer.IsEnabled)
+            if (dragRectangle == null || MouseLeaveDragRectangle(newPosition) || dispatcherTimer.IsEnabled)
             {
-                if(dispatcherTimer.IsEnabled)
+                if (dispatcherTimer.IsEnabled)
                     Mouse.OverrideCursor = Cursors.Arrow;
-                this.dragRectangle = null;
+                dragRectangle = null;
                 return;
             }
+
             Mouse.OverrideCursor = Cursors.ScrollAll;
-            (bool colX, bool colY) = CheckCollisionWithOtherRectangles(newPosition, this.dragRectangle);
+            var (colX, colY) = CheckCollisionWithOtherRectangles(newPosition, dragRectangle);
 
-            if (!colX)
-            {
-                Canvas.SetLeft(this.dragRectangle, newPosition.X - this.offset.X);
-            }
+            if (!colX) Canvas.SetLeft(dragRectangle, newPosition.X - offset.X);
 
-            if (!colY)
-            {
-                Canvas.SetTop(this.dragRectangle, newPosition.Y - this.offset.Y);
-            }
+            if (!colY) Canvas.SetTop(dragRectangle, newPosition.Y - offset.Y);
         }
 
         private void MouseHand(object sender, MouseEventArgs e) => Mouse.OverrideCursor = Cursors.Hand;
@@ -188,18 +183,19 @@ namespace ConwayCenturyPuzzle
             var collisionY = false;
             foreach (var r in rectangles)
             {
-                if (r != dragRectangle && !(r.Name.Equals("Exit") && dragRectangle.Name.Equals("J")))
-                {
-                    var thisRectX = new Rect(newPosition.X - this.offset.X + 6, Canvas.GetTop(dragRectangle) + 6, dragRectangle.Width - 12, dragRectangle.Height - 12);
-                    var thisRectY = new Rect(Canvas.GetLeft(dragRectangle) + 6, newPosition.Y - this.offset.Y + 6, dragRectangle.Width - 12, dragRectangle.Height - 12);
-                    var otherRect = new Rect(Canvas.GetLeft(r), Canvas.GetTop(r), r.Width, r.Height);
+                if (r == dragRectangle || r.Name.Equals("Exit") && dragRectangle.Name.Equals("J")) continue;
 
-                    collisionX = collisionX == true ? collisionX : thisRectX.IntersectsWith(otherRect);
+                var thisRectX = new Rect(newPosition.X - offset.X + 6, Canvas.GetTop(dragRectangle) + 6,
+                    dragRectangle.Width - 12, dragRectangle.Height - 12);
 
-                    collisionY = collisionY == true ? collisionY : thisRectY.IntersectsWith(otherRect);
+                var thisRectY = new Rect(Canvas.GetLeft(dragRectangle) + 6, newPosition.Y - offset.Y + 6,
+                    dragRectangle.Width - 12, dragRectangle.Height - 12);
 
-                }
+                var otherRect = new Rect(Canvas.GetLeft(r), Canvas.GetTop(r), r.Width, r.Height);
 
+                collisionX = collisionX ? collisionX : thisRectX.IntersectsWith(otherRect);
+
+                collisionY = collisionY ? collisionY : thisRectY.IntersectsWith(otherRect);
             }
 
             return (collisionX, collisionY);
@@ -207,16 +203,19 @@ namespace ConwayCenturyPuzzle
         }
 
         private void FillArrayWithRectangles()
-            => rectangles.ForEach(rect => FillArrayWithThisRectangle(new Rect(Canvas.GetLeft(rect), Canvas.GetTop(rect), rect.Width, rect.Height)
-                                              , rect));
+        {
+            rectangles.ForEach(rect => FillArrayWithThisRectangle(
+                new Rect(Canvas.GetLeft(rect), Canvas.GetTop(rect), rect.Width, rect.Height)
+                , rect));
+        }
 
         private void FillArrayWithThisRectangle(Rect rect, Rectangle rectangle)
         {
-            int minX = Convert.ToInt32(rect.TopLeft.X / SquareUnit) - 1;
-            int minY = Convert.ToInt32(rect.TopLeft.Y / SquareUnit) - 1;
+            var minX = Convert.ToInt32(rect.TopLeft.X / SquareUnit) - 1;
+            var minY = Convert.ToInt32(rect.TopLeft.Y / SquareUnit) - 1;
 
-            int maxX = Convert.ToInt32(rect.BottomRight.X / SquareUnit) - 2;
-            int maxY = Convert.ToInt32(rect.BottomRight.Y / SquareUnit) - 2;
+            var maxX = Convert.ToInt32(rect.BottomRight.X / SquareUnit) - 2;
+            var maxY = Convert.ToInt32(rect.BottomRight.Y / SquareUnit) - 2;
 
             //Rearrange the rectangles correctly before running the solution
             Canvas.SetLeft(rectangle, minX * 100 + 100);
@@ -224,12 +223,8 @@ namespace ConwayCenturyPuzzle
             /****************************************************************/
 
             for (var y = minY; y <= maxY; y++)
-            {
-                for (var x = minX; x <= maxX; x++)
-                {
-                    position[y, x] = rectangle.Name[0];
-                }
-            }
+            for (var x = minX; x <= maxX; x++)
+                position[y, x] = rectangle.Name[0];
         }
 
         private void ResetPositions()
@@ -238,12 +233,8 @@ namespace ConwayCenturyPuzzle
         private static void FillArrayWithInitValue(char[,] array, char c)
         {
             for (var y = 0; y < array.GetLength(0); y++)
-            {
-                for (var x = 0; x < array.GetLength(1); x++)
-                {
-                    array[y, x] = c;
-                }
-            }
+            for (var x = 0; x < array.GetLength(1); x++)
+                array[y, x] = c;
         }
 
     }
@@ -251,36 +242,35 @@ namespace ConwayCenturyPuzzle
 
     public static class PuzzleSettings
     {
-        private static readonly Dictionary<string, (int x, int y)> rectanglesInitialCoords = new Dictionary<string, (int x, int y)>
-        {
-            //Rectangle ▯ 1x2
-            ["V"] = (0, 1),
-            ["X"] = (1, 2),
-            ["W"] = (3, 1),
+        private static readonly Dictionary<string, (int x, int y)> rectanglesInitialCoords =
+            new Dictionary<string, (int x, int y)>
+            {
+                //Rectangle ▯ 1x2
+                ["V"] = (0, 1),
+                ["X"] = (1, 2),
+                ["W"] = (3, 1),
 
-            //Square □ 1x1
-            ["R"] = (0, 0),
-            ["r"] = (3, 0),
-            ["k"] = (0, 3),
-            ["K"] = (3, 3),
+                //Square □ 1x1
+                ["R"] = (0, 0),
+                ["r"] = (3, 0),
+                ["k"] = (0, 3),
+                ["K"] = (3, 3),
 
-            //Rectangle ▭ 2x1
-            ["Y"] = (0, 4),
-            ["M"] = (2, 4),
+                //Rectangle ▭ 2x1
+                ["Y"] = (0, 4),
+                ["M"] = (2, 4),
 
-            //Big Square □ 2x2
-            ["J"] = (1, 0)
-        };
+                //Big Square □ 2x2
+                ["J"] = (1, 0)
+            };
 
         public static void SetRectanglesPosition(IEnumerable<Rectangle> rectangles)
         {
             foreach (var rectangle in rectangles)
             {
-                if (rectanglesInitialCoords.TryGetValue(rectangle.Name, out var coord))
-                {
-                    Canvas.SetLeft(rectangle, coord.x * 100 + 100);
-                    Canvas.SetTop(rectangle, coord.y * 100 + 100);
-                }
+                if (!rectanglesInitialCoords.TryGetValue(rectangle.Name, out var coord)) continue;
+                Canvas.SetLeft(rectangle, coord.x * 100 + 100);
+                Canvas.SetTop(rectangle, coord.y * 100 + 100);
             }
         }
     }
